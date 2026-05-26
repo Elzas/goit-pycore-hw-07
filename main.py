@@ -127,6 +127,11 @@ class AddressBook(UserDict):
 
         return upcoming
 
+    def __str__(self):
+        if not self.data:
+            return "Address book is empty."
+        return "\n".join(str(record) for record in self.data.values())
+
 
 def input_error(func):
     def inner(*args, **kwargs):
@@ -143,33 +148,25 @@ def input_error(func):
 
 def parse_input(user_input):
     parts = user_input.strip().split()
-
     if not parts:
         return "", []
-
-    command = parts[0].lower()
-    args = parts[1:]
-
-    return command, args
+    cmd, *args = parts
+    return cmd.lower(), args
 
 
 @input_error
 def add_contact(args, book: AddressBook):
     if len(args) < 2:
         raise ValueError("Give me name and phone please.")
-
     name, phone, *_ = args
     record = book.find(name)
     message = "Contact updated."
-
     if record is None:
         record = Record(name)
         book.add_record(record)
         message = "Contact added."
-
     if phone:
         record.add_phone(phone)
-
     return message
 
 
@@ -177,13 +174,10 @@ def add_contact(args, book: AddressBook):
 def change_contact(args, book: AddressBook):
     if len(args) < 3:
         raise ValueError("Give me name, old phone and new phone please.")
-
     name, old_phone, new_phone, *_ = args
     record = book.find(name)
-
     if record is None:
         raise KeyError
-
     record.edit_phone(old_phone, new_phone)
     return "Contact updated."
 
@@ -192,38 +186,28 @@ def change_contact(args, book: AddressBook):
 def show_phone(args, book: AddressBook):
     if not args:
         raise IndexError
-
     name = args[0]
     record = book.find(name)
-
     if record is None:
         raise KeyError
-
     if not record.phones:
         return f"{name} has no phone numbers."
-
     return "; ".join(p.value for p in record.phones)
 
 
 @input_error
 def show_all(book: AddressBook):
-    if not book.data:
-        return "Address book is empty."
-
-    return "\n".join(str(record) for record in book.data.values())
+    return str(book)
 
 
 @input_error
 def add_birthday(args, book: AddressBook):
     if len(args) < 2:
         raise ValueError("Give me name and birthday in DD.MM.YYYY format.")
-
     name, birthday, *_ = args
     record = book.find(name)
-
     if record is None:
         raise KeyError
-
     record.add_birthday(birthday)
     return "Birthday added."
 
@@ -232,26 +216,20 @@ def add_birthday(args, book: AddressBook):
 def show_birthday(args, book: AddressBook):
     if not args:
         raise IndexError
-
     name = args[0]
     record = book.find(name)
-
     if record is None:
         raise KeyError
-
     if record.birthday is None:
         return f"{name} has no birthday set."
-
     return str(record.birthday)
 
 
 @input_error
 def birthdays(args, book: AddressBook):
     upcoming = book.get_upcoming_birthdays()
-
     if not upcoming:
         return "No upcoming birthdays in the next 7 days."
-
     return "\n".join(
         f"{item['name']}: {item['congratulation_date']}" for item in upcoming
     )
@@ -260,12 +238,11 @@ def birthdays(args, book: AddressBook):
 def main():
     book = AddressBook()
     print("Welcome to the assistant bot!")
-
     while True:
         user_input = input("Enter a command: ")
         command, args = parse_input(user_input)
 
-        if command in ["close", "exit"]:
+        if command in ("close", "exit"):
             print("Good bye!")
             break
 
